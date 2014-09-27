@@ -1,0 +1,5 @@
+example)#-g -v -fno-builtin -m32 -o test2_32 test2.c
+if you want debug a function,then put "-fno-builtin"
+
+-fno-eliminate-unused-debug-types
+Normally, when producing DWARF 2 output, GCC avoids producing debug symbol output for types that are nowhere used in the source file being compiled. Sometimes it is useful to have GCC emit debugging information for all types declared in a compilation unit, regardless of whether or not they are actually used in that compilation unit, for example if, in the debugger, you want to cast a value to a type that is not actually used in your program (but is declared). More often, however, this results in a significant amount of wasted space. 

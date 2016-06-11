@@ -1,0 +1,1 @@
+apt-get install git-core kernel-package fakeroot build-essential libncurses5 libncurses5-dev qemu kvm crash kexec-tools makedumpfile kernel-wedge libelf-dev asciidoc binutils-dev debootstrap genext2fs e2fsprogs

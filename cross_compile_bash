@@ -1,0 +1,63 @@
+#!/bin/sh
+sudo apt-get install g++ make gawk
+
+wget http://ftpmirror.gnu.org/binutils/binutils-2.24.tar.gz  
+wget http://ftpmirror.gnu.org/gcc/gcc-4.9.2/gcc-4.9.2.tar.gz  
+wget https://www.kernel.org/pub/linux/kernel/v3.x/linux-3.17.2.tar.xz  
+wget http://ftpmirror.gnu.org/glibc/glibc-2.20.tar.xz  
+wget http://ftpmirror.gnu.org/mpfr/mpfr-3.1.2.tar.xz  
+wget http://ftpmirror.gnu.org/gmp/gmp-6.0.0a.tar.xz  
+wget http://ftpmirror.gnu.org/mpc/mpc-1.0.2.tar.gz  
+wget ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-0.12.2.tar.bz2  
+wget ftp://gcc.gnu.org/pub/gcc/infrastructure/cloog-0.18.1.tar.gz
+
+for f in *.tar*; do tar xf $f; done
+
+cd gcc-4.9.2  
+ln -s ../mpfr-3.1.2 mpfr  
+ln -s ../gmp-6.0.0 gmp  
+ln -s ../mpc-1.0.2 mpc  
+ln -s ../isl-0.12.2 isl  
+ln -s ../cloog-0.18.1 cloog  
+cd ..
+
+sudo mkdir -p /opt/cross  
+sudo chown $(whoami) /opt/cross
+
+export PATH=/opt/cross/bin:$PATH
+
+mkdir -p build-binutils  
+cd build-binutils  
+../binutils-2.24/configure --prefix=/opt/cross --target=powerpc-linux --disable-multilib --disable-werror
+make && make install && cd ..
+
+cd linux-3.17.2  
+make ARCH=powerpc INSTALL_HDR_PATH=/opt/cross/powerpc-linux/usr headers_install  
+pushd /opt/cross/powerpc-linux  
+ln -s usr/include include  
+popd  
+cd ..
+
+mkdir -p build-gcc  
+cd build-gcc  
+../gcc-4.9.2/configure --prefix=/opt/cross --target=powerpc-linux --enable-languages=c,c++ --disable-multilib --disable-libmudflap --disable-libssp --disable-libgomp --disable-libquadmath --disable-shared --disable-threads --disable-decimal-float --disable-libffi --without-ppl
+make all-gcc && make install-gcc && cd ..
+
+mkdir -p build-glibc  
+cd build-glibc  
+../glibc-2.20/configure --prefix=/opt/cross/powerpc-linux --build=$MACHTYPE --host=powerpc-linux --target=powerpc-linux --with-headers=/opt/cross/powerpc-linux/include --disable-profile --disable-multilib libc_cv_forced_unwind=yes libc_cv_ctors_header=yes libc_cv_c_cleanup=yes libc_cv_ssp=no gcc_cv_libc_provides_ssp=no --enable-add-ons
+make install-bootstrap-headers=yes install-headers  
+make csu/subdir_lib  
+install csu/crt1.o csu/crti.o csu/crtn.o /opt/cross/powerpc-linux/lib  
+powerpc-linux-gcc -nostdlib -nostartfiles -shared -x c /dev/null -o /opt/cross/powerpc-linux/lib/libc.so  
+touch /opt/cross/powerpc-linux/include/gnu/stubs.h  
+cd ..
+
+cd build-gcc  
+make all-target-libgcc && make install-target-libgcc && cd ..
+
+cd build-glibc  
+make && make install && cd ..
+
+cd build-gcc  
+make && make install && cd ..  
